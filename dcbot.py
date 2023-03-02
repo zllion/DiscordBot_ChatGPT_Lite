@@ -5,6 +5,7 @@ from datetime import datetime
 from discord.ext import commands
 import asyncio
 from dotenv import load_dotenv
+from chatbot import Session
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -18,23 +19,20 @@ sessions = {}
 @bot.command(name='start')
 async def start_session(ctx):
     author = ctx.author
-    msg = ctx.message
-    chnl = ctx.channel
-    print(author,msg,chnl,msg.channel)
-    if author in sessions:
+    channel = ctx.channel
+    if (author,channel) in sessions:
         await ctx.send('You already have an active session!')
-        await chnl.send('You already have an active session!')
         return
-
+    
     # Create a new session for this user
-    sessions[author] = []
+    sessions[(author,channel)] = []
     # Send a message to the user to let them know the session has started
     await ctx.send('Session started! Type messages to get a response. Type !close to end the session.')
-
+    chat_session = Session()
     # Listen to the user's input
-    while True:
+    while chat_session.token_used_total<10000:
         try:
-            message = await bot.wait_for('message', check=lambda msg: msg.author == ctx.author, timeout=120)
+            message = await bot.wait_for('message', check=lambda msg: msg.author == author and msg.channel == channel, timeout=120)
         except asyncio.TimeoutError:
             await ctx.send('Session timed out. Type !start to begin a new session.')
             break
@@ -45,11 +43,11 @@ async def start_session(ctx):
             break
 
         # Otherwise, respond to the user's message
-        response = f'You said: {message.content}'
-        sessions[ctx.author].append(response)
+        response = chat_session.chat(message.content)
+        sessions[(author,channel)].append(response)
         await ctx.send(response)
 
     # Remove the user's session from the dictionary
-    del sessions[ctx.author]
+    del sessions[(author,channel)]
 
 bot.run(TOKEN)
