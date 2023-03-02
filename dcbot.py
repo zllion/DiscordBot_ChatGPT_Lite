@@ -9,7 +9,7 @@ from chatbot import Session
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
-
+YOUR_CHANNEL_ID = int(os.getenv('YOUR_CHANNEL_ID'))
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='!',intents=intents)
 
@@ -18,6 +18,8 @@ sessions = {}
 
 @bot.command(name='start')
 async def start_session(ctx):
+    if ctx.channel.id != YOUR_CHANNEL_ID:
+        return
     author = ctx.author
     channel = ctx.channel
     if (author,channel) in sessions:
@@ -32,7 +34,7 @@ async def start_session(ctx):
     # Listen to the user's input
     while chat_session.token_used_total<10000:
         try:
-            message = await bot.wait_for('message', check=lambda msg: msg.author == author and msg.channel == channel, timeout=120)
+            message = await bot.wait_for('message', check=lambda msg: msg.author == author and msg.channel == channel, timeout=60)
         except asyncio.TimeoutError:
             await ctx.send('Session timed out. Type !start to begin a new session.')
             break
