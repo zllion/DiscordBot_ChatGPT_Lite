@@ -21,7 +21,7 @@ async def start_session(ctx):
     if ctx.author in sessions:
         await ctx.send('You already have an active session!')
         return
-
+    
     # Create a new session for this user
     sessions[ctx.author] = []
 
