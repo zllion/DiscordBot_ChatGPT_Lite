@@ -18,13 +18,17 @@ sessions = {}
 
 @bot.command(name='start')
 async def start_session(ctx):
-    if ctx.author in sessions:
+    author = ctx.author
+    msg = ctx.message
+    chnl = ctx.channel
+    print(author,msg,chnl,msg.chnl)
+    if author in sessions:
         await ctx.send('You already have an active session!')
+        await chnl.send('You already have an active session!')
         return
-    
-    # Create a new session for this user
-    sessions[ctx.author] = []
 
+    # Create a new session for this user
+    sessions[author] = []
     # Send a message to the user to let them know the session has started
     await ctx.send('Session started! Type messages to get a response. Type !close to end the session.')
 
