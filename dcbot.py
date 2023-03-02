@@ -9,8 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 
-intents = discord.Intents.default()
-intents.members = True  # Enable the privileged gateway intent
+intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='!',intents=intents)
 
 # A dictionary to keep track of which user is in which session
@@ -21,7 +20,7 @@ async def start_session(ctx):
     author = ctx.author
     msg = ctx.message
     chnl = ctx.channel
-    print(author,msg,chnl,msg.chnl)
+    print(author,msg,chnl,msg.channel)
     if author in sessions:
         await ctx.send('You already have an active session!')
         await chnl.send('You already have an active session!')
