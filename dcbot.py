@@ -16,7 +16,7 @@ bot = commands.Bot(command_prefix='!',intents=intents)
 # A dictionary to keep track of which user is in which session
 sessions = {}
 
-@bot.command(name='start')
+@bot.command(name='start', help='start to chat with chatGPT')
 async def start_session(ctx):
     if ctx.channel.id != YOUR_CHANNEL_ID:
         return
@@ -48,6 +48,8 @@ async def start_session(ctx):
         response = chat_session.chat(message.content)
         sessions[(author,channel)].append(response)
         await ctx.send(response)
+    else:
+        ctx.send('Maximum chat load reached! Session end.')
 
     # Remove the user's session from the dictionary
     del sessions[(author,channel)]
