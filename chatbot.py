@@ -7,29 +7,22 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
     
 class Session():
     def __init__(self) -> None:
-        self.system_content = "You are a helpful assistant."
-        self.user_content = []
-        self.assistant_content = []
+        with open('system.prompt','r') as f:
+            self.system_content = f.read()
+        print(self.system_content)
+        self.messages = [{"role":"system", "content":self.system_content}]
         self.token_used_total = 0
     def chat(self,user_input):
+        self.messages.append({"role": "user", "content": user_input})
         response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
-        messages=self.construct_message(user_input)
+        messages = self.messages
         )
         token_used =int(response["usage"]["total_tokens"])
         content = response["choices"][0]['message']["content"]
         self.token_used_total += token_used
         # memorize
-        self.user_content.append(user_input)
-        self.assistant_content.append(content)
+        self.messages.append({"role": "assistant", "content":content})
         print(content)
         print("session_token:",token_used, "total_token_used:",self.token_used_total)
         return content
-    def construct_message(self,user_input):
-        messages = [{"role":"system", "content":self.system_content}]
-        for u,a in zip(self.user_content,self.assistant_content):
-            messages.append({"role": "user", "content": u})
-            messages.append({"role": "assistant", "content":a})   
-        messages.append({"role": "user", "content": user_input})
-        print('messages',len(messages))
-        return messages

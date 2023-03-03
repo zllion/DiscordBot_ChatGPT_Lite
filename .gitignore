@@ -19,6 +19,7 @@ build/
 *.log
 *.ini
 openai.code-workspace
+system.prompt
 
 # Ignore files containing sensitive information
 *.key

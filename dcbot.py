@@ -17,39 +17,53 @@ bot = commands.Bot(command_prefix='!',intents=intents)
 sessions = {}
 
 @bot.command(name='start', help='start to chat with chatGPT')
-async def start_session(ctx):
-    if ctx.channel.id != YOUR_CHANNEL_ID:
+async def start(ctx):
+    author,channel = ctx.author,ctx.channel
+    if channel.id != YOUR_CHANNEL_ID:
         return
-    author = ctx.author
-    channel = ctx.channel
     if (author,channel) in sessions:
         await ctx.send('You already have an active session!')
         return
+    await start_session(author,channel)
+
+@bot.event
+async def on_message(message):
+    # Check if the bot was mentioned in the message
+    if bot.user in message.mentions:
+        # Do something in response to the mention
+        author,channel = message.author,message.channel
+        if channel.id != YOUR_CHANNEL_ID:
+            return
+        if (author,channel) in sessions:
+            return
+        await start_session(author,channel)
+
+async def start_session(author, channel):
     
     # Create a new session for this user
     sessions[(author,channel)] = []
     # Send a message to the user to let them know the session has started
-    await ctx.send('Session started! Type messages to get a response. Type !close to end the session.')
+    await channel.send('Session started! Type messages to get a response. Type !close to end the session.')
     chat_session = Session()
     # Listen to the user's input
     while chat_session.token_used_total<10000:
         try:
             message = await bot.wait_for('message', check=lambda msg: msg.author == author and msg.channel == channel, timeout=60)
         except asyncio.TimeoutError:
-            await ctx.send('Session timed out. Type !start to begin a new session.')
+            await channel.send('Session timed out. Type !start to begin a new session.')
             break
 
         # If the user types !close, end the session
         if message.content.startswith('!close'):
-            await ctx.send('Session closed. Type !start to begin a new session.')
+            await channel.send('Session closed. Type !start to begin a new session.')
             break
 
         # Otherwise, respond to the user's message
         response = chat_session.chat(message.content)
         sessions[(author,channel)].append(response)
-        await ctx.send(response)
+        await channel.send(response)
     else:
-        ctx.send('Maximum chat load reached! Session end.')
+        channel.send('Maximum chat load reached! Session end.')
 
     # Remove the user's session from the dictionary
     del sessions[(author,channel)]
