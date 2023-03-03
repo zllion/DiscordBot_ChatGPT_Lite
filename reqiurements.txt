@@ -2,3 +2,4 @@ openai
 discord.py
 numpy
 python-dotenv
+pyyaml

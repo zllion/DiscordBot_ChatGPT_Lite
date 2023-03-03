@@ -77,7 +77,8 @@ async def start_session(author, channel, text=None, session_id = None):
         await channel.send(response)
     else:
         await channel.send(f'{author.mention} Maximum chat load reached! Session end.')
-
+    chat_session.save(author)
+    del chat_session
     # Remove the user's session from the dictionary
     del sessions[(author,channel)]
 
