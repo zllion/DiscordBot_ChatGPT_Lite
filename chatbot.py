@@ -4,36 +4,16 @@ from dotenv import load_dotenv
 import datetime
 import yaml
 import uuid
-
+from newspaper import Article
 
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
-    
+
 class Session():
     def __init__(self) -> None:
-        with open('system.prompt','r') as f:
-            self.system_content = f.read()
-        # print(self.system_content)
-        self.messages = [{"role":"system", "content":self.system_content}]
         self.token_used_total = 0
         self.current_token = 0
         self.session_id = str(uuid.uuid4())[:8]
-
-    def chat(self,user_input):
-        self.messages.append({"role": "user", "content": user_input})
-        response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages = self.messages
-        )
-        token_used =int(response["usage"]["total_tokens"])
-        self.current_token = token_used
-        content = response["choices"][0]['message']["content"]
-        self.token_used_total += token_used
-        # memorize
-        self.messages.append({"role": "assistant", "content":content})
-        print(content)
-        print("session_token:",token_used, "total_token_used:",self.token_used_total)
-        return content
     
     def _create_folder(self,folder_path):
         if not os.path.exists(folder_path):
@@ -62,3 +42,46 @@ class Session():
         self.current_token = data['token']
         self.token_used_total = data['total_token']
 
+class ChatSession(Session):
+    def __init__(self) -> None:
+        super().__init__()
+        with open('chat.prompt','r') as f:
+            self.system_content = f.read()
+        self.messages = [{"role":"system", "content":self.system_content}]
+
+    def chat(self,user_input):
+        self.messages.append({"role": "user", "content": user_input})
+        response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages = self.messages
+        )
+        token_used =int(response["usage"]["total_tokens"])
+        self.current_token = token_used
+        content = response["choices"][0]['message']["content"]
+        self.token_used_total += token_used
+        # memorize
+        self.messages.append({"role": "assistant", "content":content})
+        print(content)
+        print("session_token:",token_used, "total_token_used:",self.token_used_total)
+        return content
+    
+class SummarySession(Session):
+    def __init__(self) -> None:
+        super().__init__()
+        with open('summary.prompt','r') as f:
+            self.system_content = f.read()
+        self.messages = [{"role":"system", "content":self.system_content}]
+
+    def _summarize(self,text):
+        self.messages.append({"role": "user", "content": text})
+        response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages = self.messages
+        )
+        token_used =int(response["usage"]["total_tokens"])
+        self.current_token = token_used
+        content = response["choices"][0]['message']["content"]
+        self.token_used_total += token_used
+        print(content)
+        print("session_token:",token_used, "total_token_used:",self.token_used_total)
+        return content
