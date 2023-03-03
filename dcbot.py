@@ -21,16 +21,6 @@ bot = commands.Bot(command_prefix='!',intents=intents)
 # A dictionary to keep track of which user is in which session
 sessions = {}
 
-# @bot.command(name='start', help='start to chat with chatGPT')
-# async def start(ctx):
-#     author,channel = ctx.author,ctx.channel
-#     if channel.id != YOUR_CHANNEL_ID:
-#         return
-#     if (author,channel) in sessions:
-#         await ctx.send('You already have an active session!')
-#         return
-#     await start_session(author,channel)
-
 @bot.event
 async def on_message(message):
     author,channel = message.author,message.channel
@@ -42,9 +32,17 @@ async def on_message(message):
         if (author,channel) in sessions:
             return
         await start_session(author,channel,message.content)
+    if message.content.startswith('-continue') or message.content.startswith('-load'):
+        if (author,channel) in sessions:
+            return
+        ipt = message.content.split(' ')
+        if len(ipt)>2:
+            await channel.send('invalid input')
+        else:
+            session_id = ipt[1]
+        await start_session(author,channel,session_id = session_id)
 
-
-async def start_session(author, channel, text=None):
+async def start_session(author, channel, text=None, session_id = None):
     
     # Create a new session for this user
     sessions[(author,channel)] = []
@@ -56,6 +54,8 @@ async def start_session(author, channel, text=None):
         response = chat_session.chat(text)
         sessions[(author,channel)].append(response)
         await channel.send(response)
+    if session_id is not None:
+        channel.send(chat_session.load(author, session_id))
     while chat_session.token_used_total<15000:
         try:
             message = await bot.wait_for('message', check=lambda msg: msg.author == author and msg.channel == channel, timeout=180)
@@ -64,7 +64,7 @@ async def start_session(author, channel, text=None):
             break
 
         # If the user types -close, end the session
-        if message.content.startswith('-close'):
+        if message.content.startswith('-close') or message.content == 'close':
             await channel.send(f'{author.mention} Session closed. Type -start or mention to begin a new session.')
             break
 
