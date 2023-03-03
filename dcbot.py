@@ -6,6 +6,11 @@ from discord.ext import commands
 import asyncio
 from dotenv import load_dotenv
 from chatbot import Session
+import logging
+import logging.handlers
+
+logger = logging.getLogger('discord')
+logger.setLevel(logging.DEBUG)
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -36,9 +41,9 @@ async def on_message(message):
             return
         if (author,channel) in sessions:
             return
-        await start_session(author,channel)
+        await start_session(author,channel,message.content)
 
-async def start_session(author, channel):
+async def start_session(author, channel, text):
     
     # Create a new session for this user
     sessions[(author,channel)] = []
