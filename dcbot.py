@@ -49,7 +49,7 @@ async def start_session(author, channel, text=None):
     # Create a new session for this user
     sessions[(author,channel)] = []
     # Send a message to the user to let them know the session has started
-    await channel.send('Session started! Type messages to get a response. Type !close to end the session.')
+    await channel.send('Session started! Type messages to get a response. Type -close to end the session.')
     chat_session = Session()
     # Listen to the user's input
     if text is not None:
@@ -70,8 +70,9 @@ async def start_session(author, channel, text=None):
 
         # Otherwise, respond to the user's message
         response = chat_session.chat(message.content)
-        if response.startswith('!!close') or response.startswith('Goodbye!'):
+        if response.startswith('!!close') or response.endswith('!!close') or response.startswith('Goodbye!'):
             await channel.send(f'{author.mention} Session closed. Type -start or mention to begin a new session.')
+            break
         sessions[(author,channel)].append(response)
         await channel.send(response)
     else:
