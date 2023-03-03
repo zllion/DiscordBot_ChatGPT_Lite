@@ -50,6 +50,7 @@ async def start_session(author, channel, text=None, session_id = None):
     await channel.send('Session started! Type messages to get a response. Type -close to end the session.')
     chat_session = Session()
     # Listen to the user's input
+    session_close_output = f'Session id is {chat_session.session_id}. Type -continue session_id to continue. Type -start or mention to begin a new session.'
     if text is not None:
         response = chat_session.chat(text)
         sessions[(author,channel)].append(response)
@@ -60,18 +61,17 @@ async def start_session(author, channel, text=None, session_id = None):
         try:
             message = await bot.wait_for('message', check=lambda msg: msg.author == author and msg.channel == channel, timeout=180)
         except asyncio.TimeoutError:
-            await channel.send(f'{author.mention} Session timed out. Type -start or mention to begin a new session.')
+            await channel.send(f'{author.mention} Session timed out. '+session_close_output )
             break
-
         # If the user types -close, end the session
         if message.content.startswith('-close') or message.content == 'close':
-            await channel.send(f'{author.mention} Session closed. Type -start or mention to begin a new session.')
+            await channel.send(f'{author.mention} Session closed. '+session_close_output)
             break
 
         # Otherwise, respond to the user's message
         response = chat_session.chat(message.content)
         if response.startswith('!!close') or response.endswith('!!close') or response.startswith('Goodbye!'):
-            await channel.send(f'{author.mention} Session closed. Type -start or mention to begin a new session.')
+            await channel.send(f'{author.mention} Session closed. '+session_close_output)
             break
         sessions[(author,channel)].append(response)
         await channel.send(response)
