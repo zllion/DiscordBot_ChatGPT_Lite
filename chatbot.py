@@ -1,10 +1,9 @@
 import openai
 import os
 from dotenv import load_dotenv
-import uuid
 import datetime
 import yaml
-import hashlib
+import secrets
 
 
 load_dotenv()
@@ -18,7 +17,7 @@ class Session():
         self.messages = [{"role":"system", "content":self.system_content}]
         self.token_used_total = 0
         self.current_token = 0
-        self.session_id = hashlib.sha1(str(uuid.uuid4()).encode('utf-8')).hexdigest()
+        self.session_id = secrets.token_hex(8)
 
     def chat(self,user_input):
         self.messages.append({"role": "user", "content": user_input})
