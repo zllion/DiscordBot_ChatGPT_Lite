@@ -42,12 +42,10 @@ async def on_message(message):
         else:
             session_id = ipt[1]
         await start_session(author,channel,session_id = session_id)
-        return
 
 async def start_session(author, channel, text=None, session_id = None):
     chat_session = Session()
     # Create a new session for this user
-    sessions[(author,channel)] = []
     if session_id is not None:
         try:
             chat_session.load(author, session_id)
@@ -58,6 +56,7 @@ async def start_session(author, channel, text=None, session_id = None):
     else:
         # Send a message to the user to let them know the session has started
         await channel.send('Session started! Type messages to get a response. Type -close to end the session.')
+    sessions[(author,channel)] = []
     # Listen to the user's input
     session_close_output = f'Session id is {chat_session.session_id}. Type -continue session_id to continue. Type -start or mention to begin a new session.'
     if text is not None:
