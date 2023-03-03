@@ -47,8 +47,12 @@ async def start_session(author, channel, text=None, session_id = None):
     # Create a new session for this user
     sessions[(author,channel)] = []
     if session_id is not None:
-        load_msg = chat_session.load(author, session_id)
-        await channel.send(load_msg)
+        try:
+            chat_session.load(author, session_id)
+            await channel.send("Load Success!")
+        except:
+            await channel.send("Invalid Session id")
+            return 
     else:
         # Send a message to the user to let them know the session has started
         await channel.send('Session started! Type messages to get a response. Type -close to end the session.')

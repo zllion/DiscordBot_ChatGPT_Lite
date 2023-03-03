@@ -55,15 +55,10 @@ class Session():
     def load(self,user,session_id):
         folder_path = f'./data/{user.id}'
         self._create_folder(folder_path)
-        try:
-            with open(f'{folder_path}/{session_id}.yaml', 'r') as f:
-                data = yaml.load(f, Loader=yaml.FullLoader) 
-        except Exception as e:
-            print(e)
-            return 'Invalid Session id'
+        with open(f'{folder_path}/{session_id}.yaml', 'r') as f:
+            data = yaml.load(f, Loader=yaml.FullLoader) 
         self.session_id = session_id
         self.messages = data['messages']
         self.current_token = data['token']
         self.token_used_total = data['total_token']
 
-        return 'Load Sucess!'
