@@ -43,20 +43,22 @@ async def on_message(message):
         await start_session(author,channel,session_id = session_id)
 
 async def start_session(author, channel, text=None, session_id = None):
-    
+    chat_session = Session()
     # Create a new session for this user
     sessions[(author,channel)] = []
-    # Send a message to the user to let them know the session has started
-    await channel.send('Session started! Type messages to get a response. Type -close to end the session.')
-    chat_session = Session()
+    if session_id is not None:
+        load_msg = chat_session.load(author, session_id)
+        await channel.send(load_msg)
+    else:
+        # Send a message to the user to let them know the session has started
+        await channel.send('Session started! Type messages to get a response. Type -close to end the session.')
     # Listen to the user's input
     session_close_output = f'Session id is {chat_session.session_id}. Type -continue session_id to continue. Type -start or mention to begin a new session.'
     if text is not None:
         response = chat_session.chat(text)
         sessions[(author,channel)].append(response)
         await channel.send(response)
-    if session_id is not None:
-        channel.send(chat_session.load(author, session_id))
+    
     while chat_session.token_used_total<15000:
         try:
             message = await bot.wait_for('message', check=lambda msg: msg.author == author and msg.channel == channel, timeout=180)
