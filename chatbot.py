@@ -18,7 +18,7 @@ class Session():
         self.messages = [{"role":"system", "content":self.system_content}]
         self.token_used_total = 0
         self.current_token = 0
-        self.session_id = hashlib.sha1(str(uuid.uuid4())).hexdigest()
+        self.session_id = hashlib.sha1(str(uuid.uuid4()).encode('utf-8')).hexdigest()
 
     def chat(self,user_input):
         self.messages.append({"role": "user", "content": user_input})
