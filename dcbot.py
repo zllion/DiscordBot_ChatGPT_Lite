@@ -38,9 +38,11 @@ async def on_message(message):
         ipt = message.content.split(' ')
         if len(ipt)>2:
             await channel.send('invalid input')
+            return
         else:
             session_id = ipt[1]
         await start_session(author,channel,session_id = session_id)
+        return
 
 async def start_session(author, channel, text=None, session_id = None):
     chat_session = Session()
