@@ -9,8 +9,8 @@ from chatbot import Session
 import logging
 import logging.handlers
 
-logger = logging.getLogger('discord')
-logger.setLevel(logging.DEBUG)
+# logger = logging.getLogger('discord')
+# logger.setLevel(logging.DEBUG)
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -21,29 +21,30 @@ bot = commands.Bot(command_prefix='!',intents=intents)
 # A dictionary to keep track of which user is in which session
 sessions = {}
 
-@bot.command(name='start', help='start to chat with chatGPT')
-async def start(ctx):
-    author,channel = ctx.author,ctx.channel
-    if channel.id != YOUR_CHANNEL_ID:
-        return
-    if (author,channel) in sessions:
-        await ctx.send('You already have an active session!')
-        return
-    await start_session(author,channel)
+# @bot.command(name='start', help='start to chat with chatGPT')
+# async def start(ctx):
+#     author,channel = ctx.author,ctx.channel
+#     if channel.id != YOUR_CHANNEL_ID:
+#         return
+#     if (author,channel) in sessions:
+#         await ctx.send('You already have an active session!')
+#         return
+#     await start_session(author,channel)
 
 @bot.event
 async def on_message(message):
+    author,channel = message.author,message.channel
+    if channel.id != YOUR_CHANNEL_ID:
+        return
     # Check if the bot was mentioned in the message
-    if bot.user in message.mentions:
+    if bot.user in message.mentions or message.content.startswith('-start'):
         # Do something in response to the mention
-        author,channel = message.author,message.channel
-        if channel.id != YOUR_CHANNEL_ID:
-            return
         if (author,channel) in sessions:
             return
         await start_session(author,channel,message.content)
 
-async def start_session(author, channel, text):
+
+async def start_session(author, channel, text=None):
     
     # Create a new session for this user
     sessions[(author,channel)] = []
@@ -51,24 +52,30 @@ async def start_session(author, channel, text):
     await channel.send('Session started! Type messages to get a response. Type !close to end the session.')
     chat_session = Session()
     # Listen to the user's input
-    while chat_session.token_used_total<10000:
+    if text is not None:
+        response = chat_session.chat(text)
+        sessions[(author,channel)].append(response)
+        await channel.send(response)
+    while chat_session.token_used_total<15000:
         try:
-            message = await bot.wait_for('message', check=lambda msg: msg.author == author and msg.channel == channel, timeout=60)
+            message = await bot.wait_for('message', check=lambda msg: msg.author == author and msg.channel == channel, timeout=180)
         except asyncio.TimeoutError:
-            await channel.send('Session timed out. Type !start to begin a new session.')
+            await channel.send(f'{author.mention} Session timed out. Type -start or mention to begin a new session.')
             break
 
-        # If the user types !close, end the session
-        if message.content.startswith('!close'):
-            await channel.send('Session closed. Type !start to begin a new session.')
+        # If the user types -close, end the session
+        if message.content.startswith('-close'):
+            await channel.send(f'{author.mention} Session closed. Type -start or mention to begin a new session.')
             break
 
         # Otherwise, respond to the user's message
         response = chat_session.chat(message.content)
+        if response.startswith('!!close') or response.startswith('Goodbye!'):
+            await channel.send(f'{author.mention} Session closed. Type -start or mention to begin a new session.')
         sessions[(author,channel)].append(response)
         await channel.send(response)
     else:
-        channel.send('Maximum chat load reached! Session end.')
+        await channel.send(f'{author.mention} Maximum chat load reached! Session end.')
 
     # Remove the user's session from the dictionary
     del sessions[(author,channel)]
