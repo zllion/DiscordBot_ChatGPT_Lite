@@ -4,10 +4,45 @@ from dotenv import load_dotenv
 import datetime
 import yaml
 import uuid
-from newspaper import Article
+import re
+import requests
+from bs4 import BeautifulSoup
+import jieba
+from langdetect import detect
 
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
+
+def is_url(input_string):
+    url_pattern = re.compile(r'^https?://\S+$')
+    return url_pattern.match(input_string) is not None
+
+def split_article(text, snippet_size=1500, overlap=100):
+    # split the text into words
+    lang = detect(text)
+    ## TODO: improve tokenization
+    if lang == 'en':
+        words = re.findall(r'\b\w+\b', text)
+    elif lang == 'zh-cn' or lang == 'zh-tw':
+        words = jieba.lcut(text)
+    # split the words into snippets of the desired size
+    snippets = []
+    i = 0
+    while i < len(words)-overlap:
+        s = words[i:i+snippet_size]
+        if lang == 'en':
+            snippets.append(' '.join(s))
+        elif lang == 'zh-cn' or lang == 'zh-tw':
+            snippets.append(''.join(s))
+        i += snippet_size-overlap
+    return snippets
+
+def get_article_from_url(url):
+    response = requests.get(url)
+    html_content = response.content
+    soup = BeautifulSoup(html_content, 'html.parser')
+    article = soup.find('article')
+    return article.get_text()
 
 class Session():
     def __init__(self) -> None:
@@ -71,17 +106,31 @@ class SummarySession(Session):
         with open('summary.prompt','r') as f:
             self.system_content = f.read()
         self.messages = [{"role":"system", "content":self.system_content}]
-
+        self.summary = []
     def _summarize(self,text):
         self.messages.append({"role": "user", "content": text})
+        working_messages = [{"role":"system", "content":self.system_content}]
+        working_messages.append({"role": "user", "content": text})
         response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
-        messages = self.messages
+        messages = working_messages
         )
         token_used =int(response["usage"]["total_tokens"])
         self.current_token = token_used
         content = response["choices"][0]['message']["content"]
         self.token_used_total += token_used
+        self.messages.append({"role": "assistant", "content":content})
+        self.summary.append(content)
         print(content)
         print("session_token:",token_used, "total_token_used:",self.token_used_total)
         return content
+    
+    def summarize(self,t):
+        if is_url(t):
+            text = get_article_from_url(t)
+        else:
+            text = t
+        snippets = split_article(text)
+        for s in snippets:
+            self._summarize(s)
+        return '\n'.join(self.summary)

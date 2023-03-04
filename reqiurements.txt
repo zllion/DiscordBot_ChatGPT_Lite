@@ -4,3 +4,5 @@ numpy
 python-dotenv
 pyyaml
 newspaper3k
+jieba
+langdetect
