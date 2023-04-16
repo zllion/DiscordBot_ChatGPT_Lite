@@ -14,7 +14,7 @@ import logging.handlers
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
-YOUR_CHANNEL_ID = int(os.getenv('YOUR_CHANNEL_ID'))
+YOUR_CHANNEL_ID = list(map(int,os.getenv('YOUR_CHANNEL_ID').split(',')))
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='!',intents=intents)
 
@@ -24,7 +24,7 @@ sessions = {}
 @bot.event
 async def on_message(message):
     author,channel = message.author,message.channel
-    if channel.id != YOUR_CHANNEL_ID:
+    if channel.id not in YOUR_CHANNEL_ID:
         return
     # Check if the bot was mentioned in the message
     if bot.user in message.mentions or message.content.startswith('-start'):
