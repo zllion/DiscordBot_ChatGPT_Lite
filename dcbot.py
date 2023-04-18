@@ -5,7 +5,7 @@ from datetime import datetime
 from discord.ext import commands
 import asyncio
 from dotenv import load_dotenv
-from chatbot import Session
+from chatbot import ChatSession
 import logging
 import logging.handlers
 
@@ -44,7 +44,7 @@ async def on_message(message):
         await start_session(author,channel,session_id = session_id)
 
 async def start_session(author, channel, text=None, session_id = None):
-    chat_session = Session()
+    chat_session = ChatSession()
     # Create a new session for this user
     if session_id is not None:
         try:
